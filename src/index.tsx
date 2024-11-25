@@ -17,7 +17,7 @@ root.render(
       <div style={{ height: "100vh" }} className="App">
         <Routes>
           <Route path="/" element={<List />} />
-          <Route path="/edit" element={<ExcalidrawApp />} />
+          <Route path="/edit" element={<ExcalidrawApp id="edit" />} />
         </Routes>
       </div>
     </StrictMode>

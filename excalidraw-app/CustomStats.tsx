@@ -16,8 +16,8 @@ const STORAGE_SIZE_TIMEOUT = 500;
 
 const getStorageSizes = debounce((cb: (sizes: StorageSizes) => void) => {
   cb({
-    scene: getElementsStorageSize(),
-    total: getTotalStorageSize(),
+    scene: 123,
+    total: 123,
   });
 }, STORAGE_SIZE_TIMEOUT);
 
