@@ -43,14 +43,13 @@ export const importFromLocalStorage = async (id: string) => {
     // savedElements = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS);
     // savedState = localStorage.getItem(STORAGE_KEYS.LOCAL_STORAGE_APP_STATE);
 
-    const savedElements = await elementsData.getItem(
-      STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS + id,
+    savedElements = await elementsData.getItem(
+      `${id}:${STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS}`,
     );
 
-    const savedState = await stateData.getItem(
-      STORAGE_KEYS.LOCAL_STORAGE_APP_STATE + id,
+    savedState = await stateData.getItem(
+      `${id}:${STORAGE_KEYS.LOCAL_STORAGE_APP_STATE}`,
     );
-    console.log(savedElements, savedState);
   } catch (error: any) {
     // Unable to access localStorage
     console.error(error);
@@ -71,15 +70,14 @@ export const importFromLocalStorage = async (id: string) => {
     try {
       appState = {
         ...getDefaultAppState(),
-        ...clearAppStateForLocalStorage(
-          savedState as Partial<AppState>,
-        ),
+        ...clearAppStateForLocalStorage(savedState as Partial<AppState>),
       };
     } catch (error: any) {
       console.error(error);
       // Do nothing because appState is already null
     }
   }
+
   return { elements, appState };
 };
 

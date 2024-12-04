@@ -58,10 +58,15 @@ const saveDataStateToLocalStorage = async (
     //   STORAGE_KEYS.LOCAL_STORAGE_APP_STATE,
     //   JSON.stringify(clearAppStateForLocalStorage(appState)),
     // );
-    await elementsData.addOrUpdateItem(key, elements);
-    await stateData.addOrUpdateItem(key, appState);
+    await elementsData.addOrUpdateItem(
+      `${key}:${STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS}`,
+      elements,
+    );
+    await stateData.addOrUpdateItem(
+      `${key}:${STORAGE_KEYS.LOCAL_STORAGE_APP_STATE}`,
+      appState,
+    );
     updateBrowserStateVersion(STORAGE_KEYS.VERSION_DATA_STATE);
-
   } catch (error: any) {
     // Unable to access window.localStorage
     console.error(error);

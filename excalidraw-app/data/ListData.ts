@@ -1,13 +1,4 @@
-import {
-  createStore,
-  entries,
-  del,
-  getMany,
-  get,
-  set,
-  setMany,
-  type UseStore,
-} from "idb-keyval";
+import { createStore, entries, del, get, set, type UseStore } from "idb-keyval";
 
 class ElementsData {
   private store: UseStore;
