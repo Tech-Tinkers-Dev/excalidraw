@@ -142,6 +142,7 @@ const shareableLinkConfirmDialog = {
 const initializeScene = async (opts: {
   collabAPI: CollabAPI | null;
   excalidrawAPI: ExcalidrawImperativeAPI;
+  id: string;
 }): Promise<
   { scene: ExcalidrawInitialDataState | null } & (
     | { isExternalScene: true; id: string; key: string }
@@ -155,7 +156,7 @@ const initializeScene = async (opts: {
   );
   const externalUrlMatch = window.location.hash.match(/^#url=(.*)$/);
 
-  const localDataState = importFromLocalStorage();
+  const localDataState = await importFromLocalStorage(opts.id);
 
   let scene: RestoredDataState & {
     scrollToContent?: boolean;
@@ -276,7 +277,7 @@ export const appLangCodeAtom = atom(
   Array.isArray(detectedLangCode) ? detectedLangCode[0] : detectedLangCode,
 );
 
-const ExcalidrawWrapper = () => {
+const ExcalidrawWrapper = (opts: { id: string }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [langCode, setLangCode] = useAtom(appLangCodeAtom);
   const isCollabDisabled = isRunningInIframe();
@@ -386,10 +387,12 @@ const ExcalidrawWrapper = () => {
       }
     };
 
-    initializeScene({ collabAPI, excalidrawAPI }).then(async (data) => {
-      loadImages(data, /* isInitialLoad */ true);
-      initialStatePromiseRef.current.promise.resolve(data.scene);
-    });
+    initializeScene({ collabAPI, excalidrawAPI, id: opts.id }).then(
+      async (data) => {
+        loadImages(data, /* isInitialLoad */ true);
+        initialStatePromiseRef.current.promise.resolve(data.scene);
+      },
+    );
 
     const onHashChange = async (event: HashChangeEvent) => {
       event.preventDefault();
@@ -403,16 +406,18 @@ const ExcalidrawWrapper = () => {
         }
         excalidrawAPI.updateScene({ appState: { isLoading: true } });
 
-        initializeScene({ collabAPI, excalidrawAPI }).then((data) => {
-          loadImages(data);
-          if (data.scene) {
-            excalidrawAPI.updateScene({
-              ...data.scene,
-              ...restore(data.scene, null, null, { repairBindings: true }),
-              commitToHistory: true,
-            });
-          }
-        });
+        initializeScene({ collabAPI, excalidrawAPI, id: opts.id }).then(
+          (data) => {
+            loadImages(data);
+            if (data.scene) {
+              excalidrawAPI.updateScene({
+                ...data.scene,
+                ...restore(data.scene, null, null, { repairBindings: true }),
+                commitToHistory: true,
+              });
+            }
+          },
+        );
       }
     };
 
@@ -421,7 +426,7 @@ const ExcalidrawWrapper = () => {
       TITLE_TIMEOUT,
     );
 
-    const syncData = debounce(() => {
+    const syncData = debounce(async () => {
       if (isTestEnv()) {
         return;
       }
@@ -431,7 +436,7 @@ const ExcalidrawWrapper = () => {
       ) {
         // don't sync if local state is newer or identical to browser state
         if (isBrowserStorageStateNewer(STORAGE_KEYS.VERSION_DATA_STATE)) {
-          const localDataState = importFromLocalStorage();
+          const localDataState = await importFromLocalStorage(opts.id);
           const username = importUsernameFromLocalStorage();
           let langCode = languageDetector.detect() || defaultLang.code;
           if (Array.isArray(langCode)) {
@@ -483,7 +488,7 @@ const ExcalidrawWrapper = () => {
       LocalData.flushSave();
     };
 
-    const visibilityChange = (event: FocusEvent | Event) => {
+    const visibilityChange = async (event: FocusEvent | Event) => {
       if (event.type === EVENT.BLUR || document.hidden) {
         LocalData.flushSave();
       }
@@ -491,7 +496,7 @@ const ExcalidrawWrapper = () => {
         event.type === EVENT.VISIBILITY_CHANGE ||
         event.type === EVENT.FOCUS
       ) {
-        syncData();
+        await syncData();
       }
     };
 
@@ -543,7 +548,8 @@ const ExcalidrawWrapper = () => {
         STORAGE_KEYS.LOCAL_STORAGE_THEME,
       ) as Theme | null) ||
       // FIXME migration from old LS scheme. Can be removed later. #5660
-      importFromLocalStorage().appState?.theme ||
+      // (await importFromLocalStorage(opts.key))?.appState?.theme ||
+      // TODO: 临时增加
       THEME.LIGHT,
   );
 
@@ -568,7 +574,7 @@ const ExcalidrawWrapper = () => {
     // this check is redundant, but since this is a hot path, it's best
     // not to evaludate the nested expression every time
     if (!LocalData.isSavePaused()) {
-      LocalData.save(elements, appState, files, () => {
+      LocalData.save(opts.id, elements, appState, files, () => {
         if (excalidrawAPI) {
           let didChange = false;
 
@@ -798,11 +804,11 @@ const ExcalidrawWrapper = () => {
   );
 };
 
-const ExcalidrawApp = () => {
+const ExcalidrawApp = (opts: { id: string }) => {
   return (
     <TopErrorBoundary>
       <Provider unstable_createStore={() => appJotaiStore}>
-        <ExcalidrawWrapper />
+        <ExcalidrawWrapper id={opts.id} />
       </Provider>
     </TopErrorBoundary>
   );

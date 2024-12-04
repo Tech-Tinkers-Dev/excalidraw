@@ -20,6 +20,7 @@ import { SAVE_TO_LOCAL_STORAGE_TIMEOUT, STORAGE_KEYS } from "../app_constants";
 import { FileManager } from "./FileManager";
 import { Locker } from "./Locker";
 import { updateBrowserStateVersion } from "./tabSync";
+import { elementsData, stateData } from "./ListData";
 
 const filesStore = createStore("files-db", "files-store");
 
@@ -43,18 +44,27 @@ class LocalFileManager extends FileManager {
   };
 }
 
-const saveDataStateToLocalStorage = (
+const saveDataStateToLocalStorage = async (
+  key: string,
   elements: readonly ExcalidrawElement[],
   appState: AppState,
 ) => {
   try {
-    localStorage.setItem(
-      STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS,
-      JSON.stringify(clearElementsForLocalStorage(elements)),
+    // localStorage.setItem(
+    //   STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS,
+    //   JSON.stringify(clearElementsForLocalStorage(elements)),
+    // );
+    // localStorage.setItem(
+    //   STORAGE_KEYS.LOCAL_STORAGE_APP_STATE,
+    //   JSON.stringify(clearAppStateForLocalStorage(appState)),
+    // );
+    await elementsData.addOrUpdateItem(
+      `${key}:${STORAGE_KEYS.LOCAL_STORAGE_ELEMENTS}`,
+      elements,
     );
-    localStorage.setItem(
-      STORAGE_KEYS.LOCAL_STORAGE_APP_STATE,
-      JSON.stringify(clearAppStateForLocalStorage(appState)),
+    await stateData.addOrUpdateItem(
+      `${key}:${STORAGE_KEYS.LOCAL_STORAGE_APP_STATE}`,
+      appState,
     );
     updateBrowserStateVersion(STORAGE_KEYS.VERSION_DATA_STATE);
   } catch (error: any) {
@@ -68,12 +78,13 @@ type SavingLockTypes = "collaboration";
 export class LocalData {
   private static _save = debounce(
     async (
+      key: string,
       elements: readonly ExcalidrawElement[],
       appState: AppState,
       files: BinaryFiles,
       onFilesSaved: () => void,
     ) => {
-      saveDataStateToLocalStorage(elements, appState);
+      await saveDataStateToLocalStorage(key, elements, appState);
 
       await this.fileStorage.saveFiles({
         elements,
@@ -86,6 +97,7 @@ export class LocalData {
 
   /** Saves DataState, including files. Bails if saving is paused */
   static save = (
+    key: string,
     elements: readonly ExcalidrawElement[],
     appState: AppState,
     files: BinaryFiles,
@@ -93,7 +105,7 @@ export class LocalData {
   ) => {
     // we need to make the `isSavePaused` check synchronously (undebounced)
     if (!this.isSavePaused()) {
-      this._save(elements, appState, files, onFilesSaved);
+      this._save(key, elements, appState, files, onFilesSaved);
     }
   };
 

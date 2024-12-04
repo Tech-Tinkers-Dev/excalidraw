@@ -16,7 +16,7 @@ describe("Test MobileMenu", () => {
   });
 
   beforeEach(async () => {
-    await render(<ExcalidrawApp />);
+    await render(<ExcalidrawApp id="mobile-menu-test" />);
     // @ts-ignore
     h.app.refreshViewportBreakpoints();
     // @ts-ignore
